@@ -204,6 +204,49 @@
       font-weight: 700;
     }
 
+    .touch-controls {
+      display: none;
+      grid-template-columns: repeat(3, minmax(58px, 72px));
+      grid-template-rows: repeat(2, minmax(52px, 64px));
+      justify-content: center;
+      gap: 8px;
+      margin: 18px auto 0;
+      touch-action: manipulation;
+      user-select: none;
+    }
+
+    .touch-controls button {
+      min-width: 0;
+      min-height: 52px;
+      padding: 0;
+      border: 1px solid rgba(98, 245, 178, 0.24);
+      color: var(--text);
+      background: var(--panel);
+      box-shadow: 0 8px 20px var(--shadow);
+      font-size: 1.25rem;
+      line-height: 1;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .touch-controls button:hover { background: var(--panel); transform: none; }
+    .touch-controls button:active,
+    .touch-controls button.is-pressed {
+      color: #06130d;
+      background: var(--accent);
+      transform: scale(0.96);
+    }
+
+    .touch-controls .up { grid-column: 2; grid-row: 1; }
+    .touch-controls .left { grid-column: 1; grid-row: 2; }
+    .touch-controls .down { grid-column: 2; grid-row: 2; }
+    .touch-controls .right { grid-column: 3; grid-row: 2; }
+
+    @media (hover: none), (pointer: coarse) {
+      .touch-controls { display: grid; }
+      .help span:first-child { display: none; }
+      .help { justify-content: center; }
+    }
+
     @media (max-width: 500px) {
       body { padding: 16px; }
       .topbar { align-items: start; flex-direction: column; }
@@ -244,9 +287,16 @@
       </div>
     </section>
 
+    <div class="touch-controls" aria-label="Touch controls">
+      <button class="up" type="button" data-direction="up" aria-label="Move up">▲</button>
+      <button class="left" type="button" data-direction="left" aria-label="Move left">◀</button>
+      <button class="down" type="button" data-direction="down" aria-label="Move down">▼</button>
+      <button class="right" type="button" data-direction="right" aria-label="Move right">▶</button>
+    </div>
+
     <div class="help">
       <span>Use <kbd>Arrow keys</kbd> or <kbd>WASD</kbd> to steer</span>
-      <span>Speed increases as you grow</span>
+      <span>Tap the controls to steer · Speed increases as you grow</span>
     </div>
   </main>
 
@@ -259,6 +309,7 @@
       const overlay = document.getElementById("game-over");
       const finalScoreEl = document.getElementById("final-score");
       const restartButton = document.getElementById("restart");
+      const touchButtons = document.querySelectorAll("[data-direction]");
       const gridSize = 24;
       const cell = canvas.width / gridSize;
       const baseDelay = 145;
@@ -309,6 +360,16 @@
       function setDirection(next) {
         if (next.x === -direction.x && next.y === -direction.y) return;
         queuedDirection = next;
+      }
+
+      function handleDirectionInput(name) {
+        const directions = {
+          up: { x: 0, y: -1 },
+          down: { x: 0, y: 1 },
+          left: { x: -1, y: 0 },
+          right: { x: 1, y: 0 }
+        };
+        setDirection(directions[name]);
       }
 
       function update() {
@@ -420,6 +481,17 @@
           event.preventDefault();
           setDirection(next);
         }
+      });
+
+      touchButtons.forEach((button) => {
+        const press = (event) => {
+          event.preventDefault();
+          handleDirectionInput(button.dataset.direction);
+          button.classList.add("is-pressed");
+          window.setTimeout(() => button.classList.remove("is-pressed"), 120);
+        };
+        button.addEventListener("pointerdown", press);
+        button.addEventListener("contextmenu", (event) => event.preventDefault());
       });
 
       restartButton.addEventListener("click", startGame);
